@@ -1,0 +1,73 @@
+// Prisma schema for LEVEL game
+// This file defines the shape of our Postgres database.  Run `npx prisma migrate dev` to apply changes.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String      @id @default(cuid())
+  createdAt  DateTime    @default(now())
+  email      String?     @unique
+  providerId String?
+  profile    Profile?
+  preferences Json?
+  levelState LevelState?
+  missions   Mission[]
+  events     Event[]
+}
+
+model Profile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  age         Int?
+  heightCm    Int?
+  weightKg    Float?
+  workStatus  String?
+  incomeBand  String?
+  focusMoney  Int      @default(34)
+  focusHealth Int      @default(33)
+  focusPeace  Int      @default(33)
+  skills      Json     // e.g. {"writing":7,"coding":3}
+  tz          String   @default("America/Bogota")
+}
+
+model Mission {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  title      String
+  desc       String?
+  category   String    // money|health|peace
+  difficulty Float     @default(1.0)
+  estSeconds Int       @default(60)
+  createdAt  DateTime  @default(now())
+  dueAt      DateTime?
+  source     String    // "ai:v1"
+  status     String    @default("pending") // pending|done|skipped|replaced
+  xp         Int       @default(20)
+}
+
+model Event {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String    // complete|skip|swap|nudge_open|mood
+  payload   Json?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
+}
+
+model LevelState {
+  userId     String   @id
+  user       User     @relation(fields: [userId], references: [id])
+  totalXp    Int      @default(0)
+  level      Int      @default(0)
+  streak     Int      @default(0)
+  lastActive DateTime?
+}
